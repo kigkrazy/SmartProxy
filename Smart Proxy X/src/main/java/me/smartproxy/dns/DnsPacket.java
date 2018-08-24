@@ -3,150 +3,129 @@ package me.smartproxy.dns;
 import java.nio.ByteBuffer;
 
 public class DnsPacket {
-	public DnsHeader Header;
-	public Question[] Questions;
-	public Resource[] Resources;
-	public Resource[] AResources;
-	public Resource[] EResources;
+    public DnsHeader Header;
+    public Question[] Questions;
+    public Resource[] Resources;
+    public Resource[] AResources;
+    public Resource[] EResources;
 
-	public int Size;
-	
-	public static DnsPacket FromBytes(ByteBuffer buffer)
-	{
-		if (buffer.limit() < 12)
-			return null;
-		if (buffer.limit() > 512)
-			return null;
+    public int Size;
 
-		DnsPacket packet = new DnsPacket();
-		packet.Size=buffer.limit();
-		packet.Header = DnsHeader.FromBytes(buffer);
+    public static DnsPacket FromBytes(ByteBuffer buffer) {
+        if (buffer.limit() < 12)
+            return null;
+        if (buffer.limit() > 512)
+            return null;
 
-		if (packet.Header.QuestionCount > 2 || packet.Header.ResourceCount > 50 || packet.Header.AResourceCount > 50 || packet.Header.EResourceCount > 50)
-		{
-			return null;
-		}
+        DnsPacket packet = new DnsPacket();
+        packet.Size = buffer.limit();
+        packet.Header = DnsHeader.FromBytes(buffer);
 
-		packet.Questions = new Question[packet.Header.QuestionCount];
-		packet.Resources = new Resource[packet.Header.ResourceCount];
-		packet.AResources = new Resource[packet.Header.AResourceCount];
-		packet.EResources = new Resource[packet.Header.EResourceCount];
+        if (packet.Header.QuestionCount > 2 || packet.Header.ResourceCount > 50 || packet.Header.AResourceCount > 50 || packet.Header.EResourceCount > 50) {
+            return null;
+        }
 
-		for (int i = 0; i < packet.Questions.length; i++)
-		{
-			packet.Questions[i] = Question.FromBytes(buffer);
-		}
+        packet.Questions = new Question[packet.Header.QuestionCount];
+        packet.Resources = new Resource[packet.Header.ResourceCount];
+        packet.AResources = new Resource[packet.Header.AResourceCount];
+        packet.EResources = new Resource[packet.Header.EResourceCount];
 
-		for (int i = 0; i < packet.Resources.length; i++)
-		{
-			packet.Resources[i] = Resource.FromBytes(buffer);
-		}
+        for (int i = 0; i < packet.Questions.length; i++) {
+            packet.Questions[i] = Question.FromBytes(buffer);
+        }
 
-		for (int i = 0; i < packet.AResources.length; i++)
-		{
-			packet.AResources[i] = Resource.FromBytes(buffer);
-		}
+        for (int i = 0; i < packet.Resources.length; i++) {
+            packet.Resources[i] = Resource.FromBytes(buffer);
+        }
 
-		for (int i = 0; i < packet.EResources.length; i++)
-		{
-			packet.EResources[i] = Resource.FromBytes(buffer);
-		}
+        for (int i = 0; i < packet.AResources.length; i++) {
+            packet.AResources[i] = Resource.FromBytes(buffer);
+        }
 
-		return packet;
-	}
+        for (int i = 0; i < packet.EResources.length; i++) {
+            packet.EResources[i] = Resource.FromBytes(buffer);
+        }
 
-	public void ToBytes(ByteBuffer buffer)
-	{
-		Header.QuestionCount = 0;
-		Header.ResourceCount = 0;
-		Header.AResourceCount = 0;
-		Header.EResourceCount = 0;
+        return packet;
+    }
 
-		if (Questions != null)
-			Header.QuestionCount = (short) Questions.length;
-		if (Resources != null)
-			Header.ResourceCount = (short) Resources.length;
-		if (AResources != null)
-			Header.AResourceCount = (short) AResources.length;
-		if (EResources != null)
-			Header.EResourceCount = (short) EResources.length;
+    public void ToBytes(ByteBuffer buffer) {
+        Header.QuestionCount = 0;
+        Header.ResourceCount = 0;
+        Header.AResourceCount = 0;
+        Header.EResourceCount = 0;
 
-		this.Header.ToBytes(buffer);
+        if (Questions != null)
+            Header.QuestionCount = (short) Questions.length;
+        if (Resources != null)
+            Header.ResourceCount = (short) Resources.length;
+        if (AResources != null)
+            Header.AResourceCount = (short) AResources.length;
+        if (EResources != null)
+            Header.EResourceCount = (short) EResources.length;
 
-		for (int i = 0; i < Header.QuestionCount; i++)
-		{
-			this.Questions[i].ToBytes(buffer);
-		}
+        this.Header.ToBytes(buffer);
 
-		for (int i = 0; i < Header.ResourceCount; i++)
-		{
-			this.Resources[i].ToBytes(buffer);
-		}
+        for (int i = 0; i < Header.QuestionCount; i++) {
+            this.Questions[i].ToBytes(buffer);
+        }
 
-		for (int i = 0; i < Header.AResourceCount; i++)
-		{
-			this.AResources[i].ToBytes(buffer);
-		}
+        for (int i = 0; i < Header.ResourceCount; i++) {
+            this.Resources[i].ToBytes(buffer);
+        }
 
-		for (int i = 0; i < Header.EResourceCount; i++)
-		{
-			this.EResources[i].ToBytes(buffer);
-		}
-	}
+        for (int i = 0; i < Header.AResourceCount; i++) {
+            this.AResources[i].ToBytes(buffer);
+        }
 
-	public static String ReadDomain(ByteBuffer buffer,int dnsHeaderOffset)
-	{
-		StringBuilder sb = new StringBuilder();
-		int len = 0;
-		while (buffer.hasRemaining() && (len = (buffer.get() & 0xFF)) > 0)
-		{
-			if ((len & 0xc0) == 0xc0)// pointer ¸ß2Î»Îª11±íÊ¾ÊÇÖ¸Õë¡£Èç£º1100 0000
-			{
-				// Ö¸ÕëµÄÈ¡ÖµÊÇÇ°Ò»×Ö½ÚµÄºó6Î»¼ÓºóÒ»×Ö½ÚµÄ8Î»¹²14Î»µÄÖµ¡£
-				int pointer = buffer.get() & 0xFF;// µÍ8Î»
-				pointer |= (len & 0x3F) << 8;// ¸ß6Î»
+        for (int i = 0; i < Header.EResourceCount; i++) {
+            this.EResources[i].ToBytes(buffer);
+        }
+    }
 
-				ByteBuffer newBuffer = ByteBuffer.wrap(buffer.array(), dnsHeaderOffset + pointer, dnsHeaderOffset+buffer.limit());
-				sb.append(ReadDomain(newBuffer,dnsHeaderOffset));
-				return sb.toString();
-			}
-			else
-			{
-				while (len > 0 && buffer.hasRemaining())
-				{
-					sb.append((char) (buffer.get() & 0xFF));
-					len--;
-				}
-				sb.append('.');
-			}
-		}
-		
-		if(len==0&&sb.length()>0){
-			sb.deleteCharAt(sb.length()-1);//È¥µôÄ©Î²µÄµã£¨.£©
-		}
-		return sb.toString();
-	}
+    public static String ReadDomain(ByteBuffer buffer, int dnsHeaderOffset) {
+        StringBuilder sb = new StringBuilder();
+        int len = 0;
+        while (buffer.hasRemaining() && (len = (buffer.get() & 0xFF)) > 0) {
+            if ((len & 0xc0) == 0xc0)// pointer ï¿½ï¿½2Î»Îª11ï¿½ï¿½Ê¾ï¿½ï¿½Ö¸ï¿½ë¡£ï¿½ç£º1100 0000
+            {
+                // Ö¸ï¿½ï¿½ï¿½È¡Öµï¿½ï¿½Ç°Ò»ï¿½Ö½ÚµÄºï¿½6Î»ï¿½Óºï¿½Ò»ï¿½Ö½Úµï¿½8Î»ï¿½ï¿½14Î»ï¿½ï¿½Öµï¿½ï¿½
+                int pointer = buffer.get() & 0xFF;// ï¿½ï¿½8Î»
+                pointer |= (len & 0x3F) << 8;// ï¿½ï¿½6Î»
 
-	public static void WriteDomain(String domain, ByteBuffer buffer)
-	{
-		if (domain == null || domain == "")
-		{
-			buffer.put((byte) 0);
-			return;
-		}
+                ByteBuffer newBuffer = ByteBuffer.wrap(buffer.array(), dnsHeaderOffset + pointer, dnsHeaderOffset + buffer.limit());
+                sb.append(ReadDomain(newBuffer, dnsHeaderOffset));
+                return sb.toString();
+            } else {
+                while (len > 0 && buffer.hasRemaining()) {
+                    sb.append((char) (buffer.get() & 0xFF));
+                    len--;
+                }
+                sb.append('.');
+            }
+        }
 
-		String[] arr = domain.split("\\.");
-		for (String item : arr)
-		{
-			if (arr.length > 1)
-			{
-				buffer.put((byte) item.length());
-			}
+        if (len == 0 && sb.length() > 0) {
+            sb.deleteCharAt(sb.length() - 1);//È¥ï¿½ï¿½Ä©Î²ï¿½Äµã£¨.ï¿½ï¿½
+        }
+        return sb.toString();
+    }
 
-			for (int i = 0; i < item.length(); i++)
-			{
-				buffer.put((byte) item.codePointAt(i));
-			}
-		}
-	}
+    public static void WriteDomain(String domain, ByteBuffer buffer) {
+        if (domain == null || domain == "") {
+            buffer.put((byte) 0);
+            return;
+        }
+
+        String[] arr = domain.split("\\.");
+        for (String item : arr) {
+            if (arr.length > 1) {
+                buffer.put((byte) item.length());
+            }
+
+            for (int i = 0; i < item.length(); i++) {
+                buffer.put((byte) item.codePointAt(i));
+            }
+        }
+    }
 }
